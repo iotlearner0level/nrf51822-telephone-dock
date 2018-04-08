@@ -1,5 +1,7 @@
 # bletest
-Test app for connecting ble 
+Experiments for connecting mobile phone with nrf51822 using ble 
+
+
 Hello everyone,
 
 this project is my experiments on communication of a nrf51822 based board (currently using waveshare ble400 ) and mit app inventor 2 bluetooth low energy. Also connected is a ssd1306 based lcd 128x64 which prints same messages as printed on the serial monitor.
