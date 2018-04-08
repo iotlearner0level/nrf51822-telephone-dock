@@ -38,6 +38,9 @@ For dialling from the keypad on the arduino, we have to send the number using an
 
 Right now app inventor doesn't support services, but there is an experimental version ( http://services.appinventor.mit.edu/ ) which supports services. Some information here: https://ai2gsoc16.wordpress.com/app-inventor-services/ So that means, on the android side, app can be called every time a phone call is made/received and the data could be sent via ble notify. This can be done by using Add Task.. 
 
+Documentation for tasks can be found here:
+https://docs.google.com/document/d/1qtoV4imrlAKJQP1dHAsxkU5JyJWhbFnbf38tpVI8xMo/edit
+
 
 i've  very limited knowledge, if you have any ideas, comments or suggestions, please write in the issues tab!
 
