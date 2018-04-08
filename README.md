@@ -27,6 +27,8 @@ There are many example on how to use the ble extension with arduino ble devices:
 * http://www.appinventor.tw/ble_analogread
 * https://create.arduino.cc/projecthub/45349/control-rgb-led-by-dragging-arduino-101-app-inventor-98ab0b
 * https://create.arduino.cc/projecthub/alexis-santiago-allende/ble-clock-with-arduino-and-app-inventor-a724a3
+
+This is a very good introduction to the ble component of the MIT appinventor 2:
 * http://ai2inventor.blogspot.in/2017/06/controlling-bluetooth-low-energy.html
 
 
@@ -34,7 +36,7 @@ Adding phone support is easy with the Social>Phone number palette in the Designe
 
 For dialling from the keypad on the arduino, we have to send the number using another characteristic which is read by the ai2 app.
 
-Right now app inventor doesn't support services, but there is an older version ( http://services.appinventor.mit.edu/ ) which supports services. Some information here: https://ai2gsoc16.wordpress.com/app-inventor-services/ So that means, on the android side, app can be called every time a phone call is made/received and the data could be sent via ble notify. This can be done by using Add Task.. 
+Right now app inventor doesn't support services, but there is an experimental version ( http://services.appinventor.mit.edu/ ) which supports services. Some information here: https://ai2gsoc16.wordpress.com/app-inventor-services/ So that means, on the android side, app can be called every time a phone call is made/received and the data could be sent via ble notify. This can be done by using Add Task.. 
 
 
 i've  very limited knowledge, if you have any ideas, comments or suggestions, please write in the issues tab!
