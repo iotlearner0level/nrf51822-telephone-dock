@@ -22,6 +22,7 @@ and a library for wrapping up nordic functions: https://github.com/sandeepmistry
 for the mit ai2 part, we need ble extension (see extension section on the mit ai2 page: http://appinventor.mit.edu/extensions/
 
 There are many example on how to use the ble extension with arduino ble devices: 
+* https://www.hackster.io/daquilnp/bluetooth-hr-monitor-android-app-with-mit-app-inventor-27229c
 * http://www.instructables.com/id/Build-Android-Bluetooth-App-for-Arduino/
 * http://don.github.io/slides/2016-06-18-arduino-ble/#/
 * http://www.appinventor.tw/ble_analogread
