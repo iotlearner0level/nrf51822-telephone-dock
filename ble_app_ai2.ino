@@ -26,15 +26,21 @@ TTP229 ttp229(SCL_PIN, SDO_PIN); // TTP229(sclPin, sdoPin)
 #define BLE_RDY   2
 #define BLE_RST   9
 int lines=0;
-const char * bleVal;char telNumber[20]="";int telIndex=0;
+const char *bleTX,*bleRX;char telNumber[15]="";char charMessage[200]="";int telIndex=0;
 
 // create peripheral instance, see pinouts above
 BLEPeripheral                    blePeripheral       = BLEPeripheral(BLE_REQ, BLE_RDY, BLE_RST);
 
 // create service
-BLEService  testService         = BLEService("f62b9bb4-1486-43a0-b042-cc9b62e21e14");
+BLEService informationService("180A");
+BLECharacteristic modelCharacteristic("2A24", BLERead, "v1.0");
+BLECharacteristic manufacturerCharacteristic("2A29", BLERead, "Noname Supplier");
+BLECharacteristic serialNumberCharacteristic("2A25", BLERead, "2.71828");
+BLEService  telephoneService         = BLEService("f62b9bb4-1486-43a0-b042-cc9b62e21e14");
 // create counter characteristic
-BLECharacteristic   testCharacteristic  =BLECharacteristic("3bbf43e5-6e4f-40ef-9e48-129eeecefd5e", BLERead | BLEWrite | BLEWriteWithoutResponse | BLENotify,bleVal  /*| BLEIndicate*/);
+BLECharacteristic   txCharacteristic  =BLECharacteristic("3bbf43e5-6e4f-40ef-9e48-129eeecefd5e", BLERead | BLEWrite | BLEWriteWithoutResponse | BLENotify| BLEIndicate,bleTX  /*| BLEIndicate*/);
+BLECharacteristic   rxCharacteristic  =BLECharacteristic("0783b03e-8535-b5a0-7140-a304d2495cb8", BLERead | BLEWrite | BLEWriteWithoutResponse | BLENotify| BLEIndicate,bleRX  /*| BLEIndicate*/);
+
 // create user description descriptor for characteristic
 BLEDescriptor testDescriptor      = BLEDescriptor("2901", "counter");
 
@@ -62,34 +68,43 @@ void setup() {
   // Clear the buffer.
   display.clearDisplay();
 
-  blePeripheral.setLocalName("test");
+  blePeripheral.setLocalName("Telephone Receiver");
 #if 1
-  blePeripheral.setAdvertisedServiceUuid(testService.uuid());
+  blePeripheral.setAdvertisedServiceUuid(telephoneService.uuid());
 #else
   const char manufacturerData[4] = {0x12, 0x34, 0x56, 0x78};
   blePeripheral.setManufacturerData(manufacturerData, sizeof(manufacturerData));
 #endif
 
   // set device name and appearance
-  blePeripheral.setDeviceName("Test");
+  blePeripheral.setDeviceName("Telephone");
   blePeripheral.setAppearance(0x0080);
 
   // add service, characteristic, and decriptor to peripheral
-  blePeripheral.addAttribute(testService);
-  blePeripheral.addAttribute(testCharacteristic);
+  blePeripheral.addAttribute(telephoneService);
+    blePeripheral.addAttribute(txCharacteristic);
+  blePeripheral.addAttribute(rxCharacteristic);
   blePeripheral.addAttribute(testDescriptor);
+  blePeripheral.addAttribute(informationService);
+  blePeripheral.addAttribute(modelCharacteristic);
+  blePeripheral.addAttribute(manufacturerCharacteristic);
+  blePeripheral.addAttribute(serialNumberCharacteristic);
+
 
   // assign event handlers for connected, disconnected to peripheral
   blePeripheral.setEventHandler(BLEConnected, blePeripheralConnectHandler);
   blePeripheral.setEventHandler(BLEDisconnected, blePeripheralDisconnectHandler);
 
   // assign event handlers for characteristic
-  testCharacteristic.setEventHandler(BLEWritten, characteristicWritten);
-  testCharacteristic.setEventHandler(BLESubscribed, characteristicSubscribed);
-  testCharacteristic.setEventHandler(BLEUnsubscribed, characteristicUnsubscribed);
+  txCharacteristic.setEventHandler(BLEWritten, characteristicWritten);
+  txCharacteristic.setEventHandler(BLESubscribed, characteristicSubscribed);
+  txCharacteristic.setEventHandler(BLEUnsubscribed, characteristicUnsubscribed);
+  rxCharacteristic.setEventHandler(BLEWritten, characteristicWritten);
+  rxCharacteristic.setEventHandler(BLESubscribed, characteristicSubscribed);
+  rxCharacteristic.setEventHandler(BLEUnsubscribed, characteristicUnsubscribed);
 
   // set initial value for characteristic
-  testCharacteristic.setValue(0);
+  txCharacteristic.setValue("");
 
   // begin initialization
   blePeripheral.begin();
@@ -97,36 +112,36 @@ void setup() {
   msgl(F("BLE Peripheral"));
 
 #ifdef SHOW_FREE_MEMORY
+
   msg(F("Free memory = "));
   msgl(freeMemory());
 #endif
 }
 void loop() {
+  blePeripheral.poll();
   uint8_t key = ttp229.GetKey16(); // Non Blocking
   char a[5];itoa(key,a,10);
  // msgl(a);
 
   BLECentral central = blePeripheral.central();
 
-  if (central) {
-    // central connected to peripheral
-    msg(F("Connected to central: "));
-    msgl(central.address());
-
+ 
     // reset counter value
-    testCharacteristic.setValue(0);
+    int timeinsec=millis()/1000;
+    char test[10];itoa(timeinsec,a,10);
+    txCharacteristic.setValue(a);
 
-    while (central.connected()) {
+    
       // central still connected to peripheral
-      if (testCharacteristic.written()) {
+      if (txCharacteristic.written()) {
         // central wrote new value to characteristic
         msgl(F("counter written, reset"));
-        msgl(F(testCharacteristic.value()));
-
-         // reset counter value
-        lastSent = 0;
-        testCharacteristic.setValue(0);
+        msgl(F(txCharacteristic.value()));
       }
+         // reset counter value
+       // lastSent = 0;
+        //txCharacteristic.setValue(0);
+  
 
       if (millis() > 1000 && (millis() - 1000) > lastSent) {
         // atleast one second has passed since last increment
@@ -137,18 +152,15 @@ void loop() {
           telNumber[telIndex++]=key-10;
           }
           if(telIndex>15) telIndex=0;
-          testCharacteristic.setValue(telNumber);}
+          txCharacteristic.setValue(telNumber);}
         
         
 
       }
-    }
+    
 
-    // central disconnected
-    msg(F("Disconnected from central: "));
-    msgl(central.address());
-  
-}
+ 
+
 
 void blePeripheralConnectHandler(BLECentral& central) {
   // central connected event handler
@@ -165,11 +177,13 @@ void blePeripheralDisconnectHandler(BLECentral& central) {
 void characteristicWritten(BLECentral& central, BLECharacteristic& characteristic) {
   // characteristic value written event handler
   msg(F("Characteristic event, writen: "));
-  //msgl(testCharacteristic.value(), DEC);
-  //msgl(testCharacteristic.value());
-  memcpy(telNumber,testCharacteristic.value(),20);
-           Serial.print(telNumber);
-           display.print(telNumber);
+  //msgl(txCharacteristic.value(), DEC);
+  //msgl(txCharacteristic.value());
+ 
+  Serial.println(rxCharacteristic.valueLength());
+  strncpy(charMessage,reinterpret_cast<const char *>(rxCharacteristic.value()),rxCharacteristic.valueLength());
+           Serial.print(charMessage);
+           display.print(charMessage);
            
 
 }
