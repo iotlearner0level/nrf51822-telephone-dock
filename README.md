@@ -1,6 +1,22 @@
 # bletest
 Experiments for connecting mobile phone with nrf51822 using ble 
 
+Current Status:
+========================
+
+Using the nordic UART service, we are able to display received telephone numbers, incoming text messages on an OLED connected to nrf51822 using an accompanying app running on the mobile phone
+
+
+More features
+=========================
+
+In case a ring is detected, we can trigger an LED to pulsate and possibly a buzzer to sound. A toggle switch connected to GPIO pin could accept/reject/ignore a call.
+
+Another feature is to support dialling from the nrf51822 using a connected keypadc or a capacitive touch controller like i2c based MPR121.
+
+
+=================================================================================================================================
+
 
 Hello everyone,
 
