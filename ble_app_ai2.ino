@@ -38,8 +38,8 @@ BLECharacteristic manufacturerCharacteristic("2A29", BLERead, "Noname Supplier")
 BLECharacteristic serialNumberCharacteristic("2A25", BLERead, "2.71828");
 BLEService  telephoneService         = BLEService("f62b9bb4-1486-43a0-b042-cc9b62e21e14");
 // create counter characteristic
-BLECharacteristic   txCharacteristic  =BLECharacteristic("3bbf43e5-6e4f-40ef-9e48-129eeecefd5e",  BLEWrite | BLEWriteWithoutResponse | BLENotify| BLEIndicate,bleTX  /*| BLEIndicate*/);
-BLECharacteristic   rxCharacteristic  =BLECharacteristic("0783b03e-8535-b5a0-7140-a304d2495cb8", BLERead  /*|BLEWriteWithoutResponse | B,LENotify| BLEIndicate  | BLEIndicate*/,bleRX);
+BLECharacteristic   txCharacteristic  =BLECharacteristic("3bbf43e5-6e4f-40ef-9e48-129eeecefd5e",   BLENotify| BLEIndicate,bleTX  /*| BLEIndicate*/);
+BLECharacteristic   rxCharacteristic  =BLECharacteristic("0783b03e-8535-b5a0-7140-a304d2495cb8",BLEWriteWithoutResponse /*| B,LENotify| BLEIndicate  | BLEIndicate*/,bleRX);
 
 // create user description descriptor for characteristic
 BLEDescriptor testDescriptor      = BLEDescriptor("2901", "counter");
@@ -89,6 +89,7 @@ void setup() {
   // add service, characteristic, and decriptor to peripheral
   blePeripheral.addAttribute(telephoneService);
   blePeripheral.addAttribute(txCharacteristic);
+  blePeripheral.addAttribute(testDescriptor);
   blePeripheral.addAttribute(rxCharacteristic);
   blePeripheral.addAttribute(testDescriptor);
   blePeripheral.addAttribute(informationService);
@@ -197,14 +198,16 @@ void blePeripheralDisconnectHandler(BLECentral& central) {
 
 void characteristicWritten(BLECentral& central, BLECharacteristic& characteristic) {
   // characteristic value written event handler
-  msg(F("Characteristic event, writen: "));
+  msg(F("Ch event, wr:\n "));
   //msgl(txCharacteristic.value(), DEC);
   //msgl(txCharacteristic.value());
  
   Serial.println(characteristic.valueLength());
   memcpy(charMessage,characteristic.value(),characteristic.valueLength());
-           Serial.println(charMessage);
-           display.println(charMessage);
+  charMessage[characteristic.valueLength()]='\0';
+  msgl(charMessage);
+  //         Serial.println(charMessage);
+  //         display.println(charMessage);
            
 
 }
@@ -219,7 +222,7 @@ void characteristicUnsubscribed(BLECentral& central, BLECharacteristic& characte
   msgl(F("Characteristic event, unsubscribed"));
 }
 void msgl (String s){
-  if(lines++>12){
+  if(lines++>8){
     lines=0;
     display.clearDisplay();
     display.setCursor(0,0);
@@ -229,7 +232,7 @@ void msgl (String s){
   display.display();
 }
 void msg (String s){
-    if(lines++>12){
+    if(lines++>9){
     lines=0;
     display.clearDisplay();
     display.setCursor(0,0);
