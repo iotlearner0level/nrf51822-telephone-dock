@@ -38,11 +38,17 @@ BLECharacteristic manufacturerCharacteristic("2A29", BLERead, "Noname Supplier")
 BLECharacteristic serialNumberCharacteristic("2A25", BLERead, "2.71828");
 BLEService  telephoneService         = BLEService("f62b9bb4-1486-43a0-b042-cc9b62e21e14");
 // create counter characteristic
-BLECharacteristic   txCharacteristic  =BLECharacteristic("3bbf43e5-6e4f-40ef-9e48-129eeecefd5e", BLERead | BLEWrite | BLEWriteWithoutResponse | BLENotify| BLEIndicate,bleTX  /*| BLEIndicate*/);
-BLECharacteristic   rxCharacteristic  =BLECharacteristic("0783b03e-8535-b5a0-7140-a304d2495cb8", BLERead | BLEWrite | BLEWriteWithoutResponse | BLENotify| BLEIndicate,bleRX  /*| BLEIndicate*/);
+BLECharacteristic   txCharacteristic  =BLECharacteristic("3bbf43e5-6e4f-40ef-9e48-129eeecefd5e",  BLEWrite | BLEWriteWithoutResponse | BLENotify| BLEIndicate,bleTX  /*| BLEIndicate*/);
+BLECharacteristic   rxCharacteristic  =BLECharacteristic("0783b03e-8535-b5a0-7140-a304d2495cb8", BLERead  /*|BLEWriteWithoutResponse | B,LENotify| BLEIndicate  | BLEIndicate*/,bleRX);
 
 // create user description descriptor for characteristic
 BLEDescriptor testDescriptor      = BLEDescriptor("2901", "counter");
+    BLEService uartService = BLEService("6E400001-B5A3-F393-E0A9-E50E24DCCA9E");
+    BLEDescriptor uartNameDescriptor = BLEDescriptor("2901", "UART");
+    BLECharacteristic uart_rxCharacteristic = BLECharacteristic("6E400002-B5A3-F393-E0A9-E50E24DCCA9E", BLEWriteWithoutResponse, BLE_ATTRIBUTE_MAX_VALUE_LENGTH);
+    BLEDescriptor uart_rxNameDescriptor = BLEDescriptor("2901", "RX - Receive Data (Write)");
+    BLECharacteristic uart_txCharacteristic = BLECharacteristic("6E400003-B5A3-F393-E0A9-E50E24DCCA9E", BLENotify, BLE_ATTRIBUTE_MAX_VALUE_LENGTH);
+    BLEDescriptor uart_txNameDescriptor = BLEDescriptor("2901", "TX - Transfer Data (Notify)");
 
 // last counter update time
 unsigned long long               lastSent            = 0;
@@ -54,7 +60,7 @@ void characteristicWritten(BLECentral& central, BLECharacteristic& characteristi
 void characteristicSubscribed(BLECentral& central, BLECharacteristic& characteristic);
 void characteristicUnsubscribed(BLECentral& central, BLECharacteristic& characteristic);
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
 #if defined (__AVR_ATmega32U4__)
   delay(5000);  //5 seconds delay for enabling to see the start up comments on the serial board
 #endif
@@ -82,14 +88,21 @@ void setup() {
 
   // add service, characteristic, and decriptor to peripheral
   blePeripheral.addAttribute(telephoneService);
-    blePeripheral.addAttribute(txCharacteristic);
+  blePeripheral.addAttribute(txCharacteristic);
   blePeripheral.addAttribute(rxCharacteristic);
   blePeripheral.addAttribute(testDescriptor);
   blePeripheral.addAttribute(informationService);
   blePeripheral.addAttribute(modelCharacteristic);
   blePeripheral.addAttribute(manufacturerCharacteristic);
   blePeripheral.addAttribute(serialNumberCharacteristic);
-
+  blePeripheral.addAttribute(uartService);
+  blePeripheral.addAttribute(uartNameDescriptor);
+  blePeripheral.setAdvertisedServiceUuid(uartService.uuid());
+  blePeripheral.addAttribute(uart_rxCharacteristic);
+  blePeripheral.addAttribute(uart_rxNameDescriptor);
+  uart_rxCharacteristic.setEventHandler(BLEWritten, characteristicWritten);
+  blePeripheral.addAttribute(uart_txCharacteristic);
+  blePeripheral.addAttribute(uart_txNameDescriptor);
 
   // assign event handlers for connected, disconnected to peripheral
   blePeripheral.setEventHandler(BLEConnected, blePeripheralConnectHandler);
@@ -102,6 +115,12 @@ void setup() {
   rxCharacteristic.setEventHandler(BLEWritten, characteristicWritten);
   rxCharacteristic.setEventHandler(BLESubscribed, characteristicSubscribed);
   rxCharacteristic.setEventHandler(BLEUnsubscribed, characteristicUnsubscribed);
+  uart_txCharacteristic.setEventHandler(BLEWritten, characteristicWritten);
+  uart_txCharacteristic.setEventHandler(BLESubscribed, characteristicSubscribed);
+  uart_txCharacteristic.setEventHandler(BLEUnsubscribed, characteristicUnsubscribed);
+  uart_rxCharacteristic.setEventHandler(BLEWritten, characteristicWritten);
+  uart_rxCharacteristic.setEventHandler(BLESubscribed, characteristicSubscribed);
+  uart_rxCharacteristic.setEventHandler(BLEUnsubscribed, characteristicUnsubscribed);
 
   // set initial value for characteristic
   txCharacteristic.setValue("");
@@ -130,13 +149,15 @@ void loop() {
     int timeinsec=millis()/1000;
     char test[10];itoa(timeinsec,a,10);
     txCharacteristic.setValue(a);
+    uart_txCharacteristic.setValue(a);
+//    Serial.println(a);
 
     
       // central still connected to peripheral
       if (txCharacteristic.written()) {
         // central wrote new value to characteristic
-        msgl(F("counter written, reset"));
-        msgl(F(txCharacteristic.value()));
+        msgl(F("counter written, calling call back function. millis()="));
+        msgl(F(millis()));
       }
          // reset counter value
        // lastSent = 0;
@@ -180,10 +201,10 @@ void characteristicWritten(BLECentral& central, BLECharacteristic& characteristi
   //msgl(txCharacteristic.value(), DEC);
   //msgl(txCharacteristic.value());
  
-  Serial.println(rxCharacteristic.valueLength());
-  strncpy(charMessage,reinterpret_cast<const char *>(rxCharacteristic.value()),rxCharacteristic.valueLength());
-           Serial.print(charMessage);
-           display.print(charMessage);
+  Serial.println(characteristic.valueLength());
+  memcpy(charMessage,characteristic.value(),characteristic.valueLength());
+           Serial.println(charMessage);
+           display.println(charMessage);
            
 
 }
